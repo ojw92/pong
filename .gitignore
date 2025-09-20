@@ -1,0 +1,31 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.VC.db
+*.opendb
+
+# VSCode
+.vscode/
+
+# CMake build dirs
+/build/
+/out/
+/out-build/
+/out/build/
+/CMakeFiles/
+/CMakeCache.txt
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+# Binaries & intermediates
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.dll
+*.lib
+*.exp
+*.log
+*.tlog
