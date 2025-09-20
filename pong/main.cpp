@@ -57,8 +57,15 @@ public:
 
 class CpuPaddle: public Paddle {		// define CpuPaddle class that inherits all attributes & methods from Paddle class
 public:
-	void Update() {
-
+	void Update(int ball_y) {
+		// Rudimentary artificial intelligence algorithm
+		// If paddle is below the ball, move up, and vice versa
+		if (y + height / 2 > ball_y) {
+			y = y - speed;
+		}
+		if (y + height / 2 < ball_y) {
+			y = y + speed;
+		}
 	}
 };
 
@@ -98,6 +105,7 @@ int main()
 
 		// Updating
 		ball.Update();
+		cpu.Update(ball.y);
 		player.Update();
 
 		// Drawing
