@@ -13,6 +13,8 @@ Color Yellow = Color{ 243, 213, 91, 255 };
 int player_score = 0;
 int cpu_score = 0;
 
+enum class Stage { Stage1, Stage2, Stage3 };	// create new type named Stage that can only hold one of three labels: Stage1, Stage2, or Stage3
+
 class Ball {
 public:
 	float x, y;
@@ -103,6 +105,17 @@ CpuPaddle cpu;
 int main()
 {
 	cout << "Starting the game. Are you ready?" << endl;
+	
+	// Music initialization
+	cout << "Cue the music." << endl;
+	InitAudioDevice();		// initialize audio device
+	Stage stage = Stage::Stage1;		// Stage object 'stage' set to 'Stage1'
+	Music music = LoadMusicStream("assets/music/stage1_ivd.mp3");
+	SetMusicVolume(music, 0.75f);
+	PlayMusicStream(music);
+	bool pause = false;			// music pause = false
+	
+
 	const int screen_width = 1280;
 	const int screen_height = 800;
 	const int paddle_offset = 10;
@@ -134,6 +147,7 @@ int main()
 		ball.Update();
 		cpu.Update(ball.y);
 		player.Update();
+		UpdateMusicStream(music);	// plays music asynchronously
 
 		// Checking for collisions
 		if (CheckCollisionCircleRec(Vector2{ ball.x, ball.y }, ball.radius, Rectangle{ player.x, player.y, player.width, player.height })) {	// Vector2 center, float radius, Rectangle rec
@@ -153,12 +167,67 @@ int main()
 		player.Draw();
 		DrawText(TextFormat("%i", cpu_score), screen_width / 4 - 20, 20, 80, WHITE);	// text, xpos, ypos, fontsize, color
 		DrawText(TextFormat("%i", player_score), 3 * screen_width / 4 - 20, 20, 80, WHITE);
+		DrawText("↑: UP", screen_width / 4, screen_height - 90, 20, LIGHTGRAY);
+		DrawText("↓: DOWN", screen_width / 4, screen_height - 60, 20, LIGHTGRAY);
+		DrawText("M: PAUSE/RESUME MUSIC", screen_width / 4, screen_height - 30, 20, LIGHTGRAY);
+
+		// Music
+		// Pause/Resume music
+		if (IsKeyPressed(KEY_M)) {
+			pause = !pause;
+			if (pause) PauseMusicStream(music);
+			else ResumeMusicStream(music);
+		}
+		// Update music based on stage
+		if ((player_score == 3 || cpu_score == 3) && stage == Stage::Stage1) {
+			StopMusicStream(music);
+			UnloadMusicStream(music);
+			music = LoadMusicStream("assets/music/stage2_bs.mp3");
+			SetMusicVolume(music, 0.75f);
+			PlayMusicStream(music);
+			stage = Stage::Stage2;
+		}
+		if ((player_score == 6 || cpu_score == 6) && stage == Stage::Stage2) {
+			StopMusicStream(music);
+			UnloadMusicStream(music);
+			music = LoadMusicStream("assets/music/stage3_a.mp3");
+			SetMusicVolume(music, 0.75f);
+			PlayMusicStream(music);
+			stage = Stage::Stage3;
+		}
+
 		EndDrawing();
 	}
+
+	// De-initialization
+	UnloadMusicStream(music);	// unload music stream buffers from RAM
+	CloseAudioDevice();
 
 	CloseWindow();
 	return 0;
 }
 
+
+// Dev notes:
+
+// Current working directory
+// #include <filesystem>
+// std::filesystem::path currentPath = std::filesystem::current_path();		// get the current working directory
+// std::cout << "Current working directory: " << currentPath << std::endl;	// print the current working directory (...\pong\out\build\x64-debug\pong)
+
+// Ideas:
+// Sound effects
+// Stage-coded background color
+// Stage-coded difficulty levels (paddle sizes, ball speed, obstacles/direction modifiers, etc)
+// Items 
+
 // Reference: https://www.youtube.com/watch?v=W9VxRRtC_-U
 //			  https://www.youtube.com/watch?v=VLJlTaFvHo4
+//			  https://www.youtube.com/watch?v=CrPHVvgENq0	// for music
+//			  https://www.raylib.com/examples/audio/loader.html?name=audio_sound_loading	// for music
+//			  https://www.raylib.com/cheatsheet/cheatsheet.html
+//			  
+//			  
+//			  
+//			  
+//			  
