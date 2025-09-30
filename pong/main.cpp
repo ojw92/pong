@@ -13,7 +13,8 @@ Color Yellow = Color{ 243, 213, 91, 255 };
 int player_score = 0;
 int cpu_score = 0;
 
-enum class Stage { Stage1, Stage2, Stage3 };	// create new type named Stage that can only hold one of three labels: Stage1, Stage2, or Stage3
+enum class GameState { Title, Playing, Credits };
+enum class Stage { Stage1, Stage2, Stage3 };		// create new type named Stage that can only hold one of three labels: Stage1, Stage2, or Stage3
 
 class Ball {
 public:
@@ -106,15 +107,6 @@ int main()
 {
 	cout << "Starting the game. Are you ready?" << endl;
 	
-	// Music initialization
-	cout << "Cue the music." << endl;
-	InitAudioDevice();		// initialize audio device
-	Stage stage = Stage::Stage1;		// Stage object 'stage' set to 'Stage1'
-	Music music = LoadMusicStream("assets/music/stage1_ivd.mp3");
-	SetMusicVolume(music, 0.75f);
-	PlayMusicStream(music);
-	bool pause = false;			// music pause = false
-	
 
 	const int screen_width = 1280;
 	const int screen_height = 800;
@@ -140,61 +132,124 @@ int main()
 	cpu.y = screen_height / 2 - cpu.height / 2;
 	cpu.speed = 6;
 
+
+	GameState state = GameState::Title;
+	Stage     stage = Stage::Stage1;
+
+	// Music initialization
+	InitAudioDevice();			// initialize audio device
+	Music music = LoadMusicStream("assets/music/stage1_ivd.mp3");	// Il Vento D'Oro
+	bool pause = false;			// music pause = false
+
+
 	while (WindowShouldClose() == false) {		// WindowShouldClose() checks if esc key is pressed or X on the window is clicked - in which case it returns true 
 		BeginDrawing();
 
-		// Updating
-		ball.Update();
-		cpu.Update(ball.y);
-		player.Update();
-		UpdateMusicStream(music);	// plays music asynchronously
+		switch (state) {
+			// Title page
+			case GameState::Title{
+				// Display title page stuff
 
-		// Checking for collisions
-		if (CheckCollisionCircleRec(Vector2{ ball.x, ball.y }, ball.radius, Rectangle{ player.x, player.y, player.width, player.height })) {	// Vector2 center, float radius, Rectangle rec
-			ball.speed_x *= -1;
-		}
-		if (CheckCollisionCircleRec(Vector2{ ball.x, ball.y }, ball.radius, Rectangle{ cpu.x, cpu.y, cpu.width, cpu.height })) {
-			ball.speed_x *= -1;
+			}
+		
+
+			// Game start
+			case GameState::Playing{
+
+				// Updating
+				ball.Update();
+				cpu.Update(ball.y);
+				player.Update();
+				UpdateMusicStream(music);	// plays music asynchronously
+
+				// Checking for collisions
+				if (CheckCollisionCircleRec(Vector2{ ball.x, ball.y }, ball.radius, Rectangle{ player.x, player.y, player.width, player.height })) {	// Vector2 center, float radius, Rectangle rec
+					ball.speed_x *= -1;
+				}
+				if (CheckCollisionCircleRec(Vector2{ ball.x, ball.y }, ball.radius, Rectangle{ cpu.x, cpu.y, cpu.width, cpu.height })) {
+					ball.speed_x *= -1;
+				}
+
+				// Drawing
+				ClearBackground(Dark_Green);		// prevent ball from leaving traces
+				DrawRectangle(screen_width / 2, 0, screen_width / 2, screen_height, Green);		// fill the right half of the field with Green
+				DrawCircle(screen_width / 2, screen_height / 2, 150, Light_Green);
+				DrawLine(screen_width / 2, 0, screen_width / 2, screen_height, WHITE);	// int startPosX, int startPosY, int endPosX, int endPosY, Color color
+				ball.Draw();
+				cpu.Draw();
+				player.Draw();
+				DrawText(TextFormat("%i", cpu_score), screen_width / 4 - 20, 20, 80, WHITE);	// text, xpos, ypos, fontsize, color
+				DrawText(TextFormat("%i", player_score), 3 * screen_width / 4 - 20, 20, 80, WHITE);
+				DrawText("↑: UP", screen_width / 4, screen_height - 90, 20, LIGHTGRAY);
+				DrawText("↓: DOWN", screen_width / 4, screen_height - 60, 20, LIGHTGRAY);
+				DrawText("M: PAUSE/RESUME MUSIC", screen_width / 4, screen_height - 30, 20, LIGHTGRAY);
+
+				// Music
+				// Pause/Resume music
+				if (IsKeyPressed(KEY_M)) {
+					pause = !pause;
+					if (pause) PauseMusicStream(music);
+					else ResumeMusicStream(music);
+				}
+
+
+				// Change stage based on score
+				if ((player_score == 3 || cpu_score == 3) && stage == Stage::Stage1) {
+					stage = Stage::Stage2;
+				}
+				if ((player_score == 6 || cpu_score == 6) && stage == Stage::Stage2) {
+					stage = Stage::Stage3;
+				}
+
+
+
+				// Apply changes by stage
+				switch (stage) {
+					// Stage 1
+					case Stage::Stage1{
+						// Play Stage1 music
+						//state = GameState::Stage1;		// Stage object 'stage' set to 'Stage1'
+						//Music music = LoadMusicStream("assets/music/stage1_ivd.mp3");
+						SetMusicVolume(music, 0.75f);
+						PlayMusicStream(music);
+						//bool pause = false;
+					}
+				
+
+					// Stage 2
+					case Stage::Stage2{
+						// Update music based on stage
+						StopMusicStream(music);
+						UnloadMusicStream(music);
+						music = LoadMusicStream("assets/music/stage2_bs.mp3");	// Bloody Stream
+						SetMusicVolume(music, 0.75f);
+						PlayMusicStream(music);
+
+						// Add Stage2 changes here
+
+					}
+				
+
+					// Stage 3
+					case Stage::Stage3{
+						// Update music based on stage
+						StopMusicStream(music);
+						UnloadMusicStream(music);
+						music = LoadMusicStream("assets/music/stage3_a.mp3");	// Awaken
+						SetMusicVolume(music, 0.75f);
+						PlayMusicStream(music);
+
+						// Add Stage3 changes here
+
+					}
+				}
+
+
+			}
 		}
 
-		// Drawing
-		ClearBackground(Dark_Green);		// prevent ball from leaving traces
-		DrawRectangle(screen_width / 2, 0, screen_width / 2, screen_height, Green);		// fill the right half of the field with Green
-		DrawCircle(screen_width / 2, screen_height / 2, 150, Light_Green);
-		DrawLine(screen_width/2, 0, screen_width/2, screen_height, WHITE);	// int startPosX, int startPosY, int endPosX, int endPosY, Color color
-		ball.Draw();
-		cpu.Draw();
-		player.Draw();
-		DrawText(TextFormat("%i", cpu_score), screen_width / 4 - 20, 20, 80, WHITE);	// text, xpos, ypos, fontsize, color
-		DrawText(TextFormat("%i", player_score), 3 * screen_width / 4 - 20, 20, 80, WHITE);
-		DrawText("↑: UP", screen_width / 4, screen_height - 90, 20, LIGHTGRAY);
-		DrawText("↓: DOWN", screen_width / 4, screen_height - 60, 20, LIGHTGRAY);
-		DrawText("M: PAUSE/RESUME MUSIC", screen_width / 4, screen_height - 30, 20, LIGHTGRAY);
+		
 
-		// Music
-		// Pause/Resume music
-		if (IsKeyPressed(KEY_M)) {
-			pause = !pause;
-			if (pause) PauseMusicStream(music);
-			else ResumeMusicStream(music);
-		}
-		// Update music based on stage
-		if ((player_score == 3 || cpu_score == 3) && stage == Stage::Stage1) {
-			StopMusicStream(music);
-			UnloadMusicStream(music);
-			music = LoadMusicStream("assets/music/stage2_bs.mp3");
-			SetMusicVolume(music, 0.75f);
-			PlayMusicStream(music);
-			stage = Stage::Stage2;
-		}
-		if ((player_score == 6 || cpu_score == 6) && stage == Stage::Stage2) {
-			StopMusicStream(music);
-			UnloadMusicStream(music);
-			music = LoadMusicStream("assets/music/stage3_a.mp3");
-			SetMusicVolume(music, 0.75f);
-			PlayMusicStream(music);
-			stage = Stage::Stage3;
-		}
 
 		EndDrawing();
 	}
